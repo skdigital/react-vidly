@@ -1,87 +1,103 @@
 import React, { Component } from 'react';
-import { getMovie, getMovies, deleteMovie } from '../services/fakeMovieService';
+import { getMovies } from '../services/fakeMovieService';
 import Moment from 'react-moment';
+import Like from './common/like';
+import Pagination from './common/pagination';
+import FilterList from './common/filterList';
 
 class Movies extends Component {
   state = {
-    movie: {
-      _id: '',
-      title: '',
-      genre: {
-        _id: '',
-        name: ''
-      },
-      numberInStock: 0,
-      dailyRentalsRate: 0,
-      publishDate: ''
-    },
     movies: getMovies(),
-    totalMovies: 0
+    pageSize: 4
   };
 
   formatTitle = title => {
     return title.charAt(0).toUpperCase() + title.slice(1);
   };
 
-  formatDate = date => {
-    return date.split('T')[0];
+  handleDelete = movie => {
+    const movies = this.state.movies.filter(m => m._id !== movie._id);
+    this.setState({ movies });
   };
 
-  getMovie = () => {
-    const _id = '5b21ca3eeb7f6fbccd471821';
-    const movie = getMovie(_id);
-    console.log(movie);
-    this.setState({ movie: movie });
+  handleLike = movie => {
+    const movies = [...this.state.movies];
+    const index = movies.indexOf(movie);
+    console.log(index);
+    movies[index] = { ...movies[index] };
+    console.log(movies[index]);
+    movies[index].liked = !movies[index].liked;
+    this.setState({ movies });
   };
 
-  handleDelete = _id => {
-    const movies = { ...this.state.movies };
-    delete movies[_id];
-    this.setState({ movies: movies });
-    deleteMovie(_id);
+  handlePageChange = () => {
+    console.log('PageChange Clicked');
   };
 
   render() {
+    const { length: count } = this.state.movies;
+
+    if (count === 0) return <h4>There are no movies in the database</h4>;
+
     return (
       <React.Fragment>
-        <button className="btn btn-flat btn-secondary" onClick={this.getMovie}>
-          Get Movie
-        </button>
-        <h4>There are {this.state.totalMovies} movies in the database</h4>
+        <h4>Showing {count} movies in the database</h4>
 
-        {/* table // title, genre, stock, rate, button(delete) */}
-        <table className="table">
-          <thead className="text-center">
-            <tr>
-              {Object.keys(this.state.movie).map(title => {
-                return <th key={title}>{this.formatTitle(title)}</th>;
-              })}
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {this.state.movies.map(movie => (
-              <tr className="text-center" key={movie._id}>
-                <td>{movie._id}</td>
-                <td>{movie.title}</td>
-                <td>{movie.genre.name}</td>
-                <td>{movie.numberInStock}</td>
-                <td>{movie.dailyRentalRate}</td>
-                <td>
-                  <Moment format="DD/MM/YYYY">{movie.publishDate}</Moment>
-                </td>
-                <td>
-                  <button
-                    onClick={this.handleDelete}
-                    className="btn btn-danger btn-flat"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="row mt-3">
+          <div className="col-sm-3">
+            <FilterList />
+          </div>
+          <div className="col-sm-8">
+            <table className="table">
+              <thead className="text-center">
+                <tr>
+                  <th>Title</th>
+                  <th>Genre</th>
+                  <th>Number in Stock</th>
+                  <th>Daily Rental rate</th>
+                  <th>Publish Date</th>
+                  <th />
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {this.state.movies.map(movie => (
+                  <tr className="text-center" key={movie._id}>
+                    <td>{movie.title}</td>
+                    <td>{movie.genre.name}</td>
+                    <td>{movie.numberInStock}</td>
+                    <td>{movie.dailyRentalRate}</td>
+                    <td>
+                      <Moment format="DD/MM/YYYY">{movie.publishDate}</Moment>
+                    </td>
+                    <td>
+                      <Like
+                        movie
+                        liked={movie.liked}
+                        onClick={() => this.handleLike(movie)}
+                      />
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => this.handleDelete(movie)}
+                        className="btn btn-danger btn-flat"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div>
+              <Pagination
+                itemsCount={count}
+                pageSize={this.state.pageSize}
+                onPageChange={this.handlePageChange}
+              />
+            </div>
+          </div>
+        </div>
       </React.Fragment>
     );
   }
